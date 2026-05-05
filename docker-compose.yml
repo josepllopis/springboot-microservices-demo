@@ -1,0 +1,168 @@
+services:
+
+  mysql-producto:
+    image: mysql:8.0
+    container_name: mysql-producto
+    mem_limit: 512m
+    ports:
+      - "3326:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_PRODUCTO}
+    volumes:
+      - mysql-producto-data:/var/lib/mysql
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    
+    
+
+
+  mysql-carrito:
+    image: mysql:8.0
+    container_name: mysql-carrito
+    mem_limit: 512m
+    ports:
+      - "3327:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_CARRITO}
+    volumes:
+      - mysql-carrito-data:/var/lib/mysql
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+  mysql-ventas:
+    image: mysql:8.0
+    container_name: mysql-ventas
+    mem_limit: 512m
+    ports:
+      - "3338:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_VENTAS}
+    volumes:
+      - mysql-ventas-data:/var/lib/mysql
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    
+
+
+  eureka-server:
+    build: eureka-server/eureka-server
+    container_name: eureka-server
+    mem_limit: 512m
+    ports:
+      - "8762:8762"
+    networks:
+      - microservices-network
+    
+    
+
+
+  service-producto:
+    build: service-producto/service-producto
+    container_name: service-producto
+    mem_limit: 512m
+    ports:
+      - "9770:9770"
+    networks:
+      - microservices-network
+    depends_on:
+      mysql-producto:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DATASOURCE_URL_PRODUCTO=${DATASOURCE_URL_PRODUCTO}
+      - DATASOURCE_USERNAME=${DATASOURCE_USERNAME}
+      - DATASOURCE_PASSWORD=${DATASOURCE_PASSWORD}
+      - EUREKA_URL=${EUREKA_URL}
+    
+    
+  service-carrito:
+    build: service-carrito/service-carrito
+    container_name: service-carrito
+    mem_limit: 512m
+    ports:
+      - "9768:9768"
+    networks:
+      - microservices-network
+    depends_on:
+      mysql-carrito:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DATASOURCE_URL_CARRITO=${DATASOURCE_URL_CARRITO}
+      - DATASOURCE_USERNAME=${DATASOURCE_USERNAME}
+      - DATASOURCE_PASSWORD=${DATASOURCE_PASSWORD}
+      - EUREKA_URL=${EUREKA_URL}
+
+
+
+  service-ventas:
+    build: service-ventas/service-ventas
+    container_name: service-ventas
+    mem_limit: 512m
+    ports:
+      - "9769:9769"
+    networks:
+      - microservices-network
+    depends_on:
+      mysql-ventas:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DATASOURCE_URL_VENTAS=${DATASOURCE_URL_VENTAS}
+      - DATASOURCE_USERNAME=${DATASOURCE_USERNAME}
+      - DATASOURCE_PASSWORD=${DATASOURCE_PASSWORD}
+      - EUREKA_URL=${EUREKA_URL}
+    
+
+
+  api-gateway:
+    build: api-gateway/api-gateway
+    container_name: api-gateway
+    mem_limit: 512m
+    ports:
+      - "9007:9007"
+    networks:
+      - microservices-network
+    depends_on:
+      - eureka-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      
+    
+
+
+networks:
+  microservices-network:
+
+volumes:
+  mysql-producto-data:
+  mysql-carrito-data:
+  mysql-ventas-data:

@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: service-producto
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DATASOURCE_URL_PRODUCTO}
+    username: ${DATASOURCE_USERNAME}
+    password: ${DATASOURCE_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+
+
+server:
+  port: 9770
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL}
+  instance:
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 10
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      productoService:
+        ignoreExceptions:
+          - com.electrodomesticos.service_producto.exception.ProductoNotFoundException
